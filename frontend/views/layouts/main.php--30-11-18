@@ -1,0 +1,104 @@
+<?php
+
+/* @var $this \yii\web\View */
+/* @var $content string */
+
+use yii\helpers\Html;
+use yii\bootstrap\Nav;
+use yii\bootstrap\NavBar;
+use yii\widgets\Breadcrumbs;
+use frontend\assets\AppAsset;
+use common\widgets\Alert;
+
+AppAsset::register($this);
+?>
+<?php $this->beginPage() ?>
+<!DOCTYPE html>
+<html lang="<?= Yii::$app->language ?>">
+<head>
+    <meta charset="<?= Yii::$app->charset ?>">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <?= Html::csrfMetaTags() ?>
+	
+    <title><?= Html::encode($this->title) ?></title>
+	<link rel="shortcut icon" href="<?php echo Yii::getAlias('@web').'/' ?>images/favi.png" type="image/png">
+    <?php $this->head() ?>
+</head>
+<body class="<?php echo (isset($this->context->action->id) && $this->context->action->id=='reserve-box') ? 'select-hotel1' : '';  echo ' '; echo (isset($this->context->action->id) && $this->context->action->id=='confirmation') ? 'confirmation-page' : ''; ?>">
+<?php $this->beginBody() ?>
+
+<div class="main">
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-sm-6 col-xs-6">
+				<div class="logo">
+					<a href="<?php echo Yii::getAlias('@web');?>"><img src="<?php echo Yii::getAlias('@web').'/' ?>images/logo.png" alt="Flight Box"></a>
+				</div>
+			</div>
+			<div class="col-sm-6 col-xs-6">
+				<div class="toggle">
+					<img src="<?php echo Yii::getAlias('@web').'/' ?>images/toggle.png" alt="Flight Box">
+				</div>
+			</div>
+		</div>
+	</div>
+    <?= Alert::widget() ?>
+    <?= $content ?>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="copyrght">
+				<div class="col-sm-6 col-xs-6">
+					<div class="copy">
+						<p>© 2018 Flight Box</p>
+					</div>
+				</div>
+				<div class="col-sm-6 col-xs-6 msg">
+					<div class="inbox">
+						<img src="<?php echo Yii::getAlias('@web').'/' ?>images/bitmap.png" alt="Flight Box">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="menus">
+		<div class="menu-toggle">
+			<div class="col-sm-6 col-xs-6">
+				<div class="logo">
+					<a href=""><img src="<?php echo Yii::getAlias('@web').'/' ?>images/logo-white.png" alt="Flight Box"></a>
+				</div>
+			</div>
+			<div class="col-sm-6 col-xs-6">
+				<div class="close-menu">
+					<img src="<?php echo Yii::getAlias('@web').'/' ?>images/cross.png" alt="Flight Box">
+				</div>
+			</div>
+			<div class="menu-link">
+				<ul>
+					<li><a href="">Reserve a Box</a></li>
+					<li><a href="">Become a Hotel Partner</a></li>
+					<li><a href="">Support</a></li>
+					<li><a href="">Terms of Use</a></li>
+					<li><a href="">Privacy Policy</a></li>
+				</ul>
+			</div>
+			<div class="copyrght">
+				<div class="col-sm-6 col-xs-6">
+					<div class="copy">
+						<p>© 2018 Flight Box</p>
+					</div>
+				</div>
+				<div class="col-sm-6 col-xs-6 msg">
+					<div class="inbox">
+						<img src="<?php echo Yii::getAlias('@web').'/' ?>images/bitmap.png" alt="Flight Box">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<?php $this->endBody() ?>
+</body>
+</html>
+<?php $this->endPage() ?>

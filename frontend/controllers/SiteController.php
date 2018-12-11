@@ -1,0 +1,623 @@
+<?php
+namespace frontend\controllers;
+
+use Yii;
+use yii\base\InvalidParamException;
+use yii\web\BadRequestHttpException;
+use yii\web\Controller;
+use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
+use common\models\LoginForm;
+use frontend\models\PasswordResetRequestForm;
+use frontend\models\ResetPasswordForm;
+use frontend\models\SignupForm;
+use frontend\models\ContactForm;
+
+
+/**
+ * Site controller
+ */
+class SiteController extends Controller
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['logout', 'signup'],
+                'rules' => [
+                    [
+                        'actions' => ['signup'],
+                        'allow' => true,
+                        'roles' => ['?'],
+                    ],
+                    [
+                        'actions' => ['logout'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
+            'verbs' => [
+                'class' => VerbFilter::className(),
+                'actions' => [
+                    'logout' => ['post'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function actions()
+    {
+        return [
+            'error' => [
+                'class' => 'yii\web\ErrorAction',
+            ],
+            'captcha' => [
+                'class' => 'yii\captcha\CaptchaAction',
+                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
+            ],
+        ];
+    }
+
+    /**
+     * Displays homepage.
+     *
+     * @return mixed
+     */
+    public function actionIndex()
+    {
+        return $this->render('index');
+    }
+
+    /**
+     * Logs in a user.
+     *
+     * @return mixed
+     */
+    public function actionLogin()
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->goHome();
+        }
+
+        $model = new LoginForm();
+        if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            return $this->goBack();
+        } else {
+            $model->password = '';
+
+            return $this->render('login', [
+                'model' => $model,
+            ]);
+        }
+    }
+
+    /**
+     * Logs out the current user.
+     *
+     * @return mixed
+     */
+    public function actionLogout()
+    {
+        Yii::$app->user->logout();
+
+        return $this->goHome();
+    }
+
+    /**
+     * Displays contact page.
+     *
+     * @return mixed
+     */
+    public function actionContact()
+    {
+        $model = new ContactForm();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            if ($model->sendEmail(Yii::$app->params['adminEmail'])) {
+                Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond to you as soon as possible.');
+            } else {
+                Yii::$app->session->setFlash('error', 'There was an error sending your message.');
+            }
+
+            return $this->refresh();
+        } else {
+            return $this->render('contact', [
+                'model' => $model,
+            ]);
+        }
+    }
+
+    /**
+     * Displays about page.
+     *
+     * @return mixed
+     */
+    public function actionAbout()
+    {
+        return $this->render('about');
+    }
+	
+	/**
+     * Displays privacy policy page.
+     *
+     * @return mixed
+     */
+    public function actionPrivacyPolicy()
+    {
+        return $this->render('privacyPolicy');
+    }
+	
+	/**
+     * Displays Terms of use page.
+     *
+     * @return mixed
+     */
+    public function actionTermsOfUse()
+    {
+        return $this->render('termsofuse');
+    }
+
+    /**
+     * Signs user up.
+     *
+     * @return mixed
+     */
+    public function actionSignup()
+    {
+        $model = new SignupForm();
+        if ($model->load(Yii::$app->request->post())) {
+            if ($user = $model->signup()) {
+                if (Yii::$app->getUser()->login($user)) {
+                    return $this->goHome();
+                }
+            }
+        }
+
+        return $this->render('signup', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Requests password reset.
+     *
+     * @return mixed
+     */
+    public function actionRequestPasswordReset()
+    {
+        $model = new PasswordResetRequestForm();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            if ($model->sendEmail()) {
+                Yii::$app->session->setFlash('success', 'Check your email for further instructions.');
+
+                return $this->goHome();
+            } else {
+                Yii::$app->session->setFlash('error', 'Sorry, we are unable to reset password for the provided email address.');
+            }
+        }
+
+        return $this->render('requestPasswordResetToken', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Resets password.
+     *
+     * @param string $token
+     * @return mixed
+     * @throws BadRequestHttpException
+     */
+    public function actionResetPassword($token)
+    {
+        try {
+            $model = new ResetPasswordForm($token);
+        } catch (InvalidParamException $e) {
+            throw new BadRequestHttpException($e->getMessage());
+        }
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate() && $model->resetPassword()) {
+            Yii::$app->session->setFlash('success', 'New password saved.');
+
+            return $this->goHome();
+        }
+
+        return $this->render('resetPassword', [
+            'model' => $model,
+        ]);
+    }
+	
+	/**
+     * Reserve Box.
+     *
+     */
+    public function actionReserveBox()
+    {
+		$model = [];
+		$session = Yii::$app->session;
+		$reservedBoxData = $session->get('reservedBoxData');
+		// destroys all data registered to a session.
+		//$session->destroy();
+		
+		//using firebase
+		/*$database = Yii::$app->firebase->getDatabase();
+		$reference = $database->getReference('/re');
+		$value = $reference->getValue();
+		echo "<pre>";var_dump($value);echo "</pre>";die("Database Test");*/
+		
+		//using firestore
+		
+		/*$date_time =  new \DateTime(date('Y-m-d H:m:s'));
+		
+		echo "<pre>";var_dump($date_time);echo "</pre>";*/
+        return $this->render('reserveBox', [
+            'model' => $model,
+			'session_data' => $reservedBoxData
+        ]);
+    }
+	
+	/**
+     * Choose Hotel.
+     *
+     */
+    public function actionChooseHotel()
+    {
+		$response   = ['status'=>'fail','data'=>[]];
+		$session 	= Yii::$app->session;
+		$hotel_id = Yii::$app->request->post('hotel_id');
+        if (isset($hotel_id)) {
+           $response['status'] = 'success';
+		   if($session->has('reservedBoxData')) {
+			   //update session value
+			   $arrival_date = (isset($session['reservedBoxData']['arrival_date'])) ? $session['reservedBoxData']['arrival_date'] : '';
+			   $departure_date = (isset($session['reservedBoxData']['departure_date'])) ? $session['reservedBoxData']['departure_date'] : '';
+			   $gear_type = (isset($session['reservedBoxData']['gear_type'])) ? $session['reservedBoxData']['gear_type'] : '';
+			   $shoe_size = (isset($session['reservedBoxData']['shoe_size'])) ? $session['reservedBoxData']['shoe_size'] : '';
+			   $short_size = (isset($session['reservedBoxData']['short_size'])) ? $session['reservedBoxData']['short_size'] : '';
+			   $boxer_brief_size = (isset($session['reservedBoxData']['boxer_brief_size'])) ? $session['reservedBoxData']['boxer_brief_size'] : '';
+			   $tshirt_size = (isset($session['reservedBoxData']['tshirt_size'])) ? $session['reservedBoxData']['tshirt_size'] : '';
+			   $short_size = (isset($session['reservedBoxData']['short_size'])) ? $session['reservedBoxData']['short_size'] : '';
+			   $sock_size = (isset($session['reservedBoxData']['sock_size'])) ? $session['reservedBoxData']['sock_size'] : '';
+			   
+				$session['reservedBoxData'] = [
+					'hotel_id' => $hotel_id,
+					'arrival_date' => $arrival_date ,
+					'departure_date' => $departure_date ,
+					'gear_type' => $gear_type,
+					'shoe_size' => $shoe_size,
+					'short_size' => $short_size,
+					'sock_size' => $sock_size,
+					'boxer_brief_size' => $boxer_brief_size,
+					'tshirt_size' => $tshirt_size,
+			   ];
+		   }else {
+			   // open a session
+			   $session->open();
+			   $session['reservedBoxData'] = [
+					'hotel_id' => $hotel_id,
+			   ];
+		   }
+        } else {
+           $response['status'] = 'fail';
+        }
+        return \yii\helpers\Json::encode($response);
+    }
+	
+	/**
+     * Choose Schedule
+     *
+     */
+    public function actionChooseSchedule()
+    {
+		$response   = ['status'=>'fail','data'=>[]];
+		$session 	= Yii::$app->session;
+		$arrival_date = Yii::$app->request->post('arrival_date');
+		$departure_date = Yii::$app->request->post('departure_date');
+        if (isset($arrival_date) && isset($departure_date)) {
+           $response['status'] = 'success';
+		   if($session->has('reservedBoxData')) {
+			   
+			   $gear_type = (isset($session['reservedBoxData']['gear_type'])) ? $session['reservedBoxData']['gear_type'] : '';
+			   $shoe_size = (isset($session['reservedBoxData']['shoe_size'])) ? $session['reservedBoxData']['shoe_size'] : '';
+			   $short_size = (isset($session['reservedBoxData']['short_size'])) ? $session['reservedBoxData']['short_size'] : '';
+			   $boxer_brief_size = (isset($session['reservedBoxData']['boxer_brief_size'])) ? $session['reservedBoxData']['boxer_brief_size'] : '';
+			   $tshirt_size = (isset($session['reservedBoxData']['tshirt_size'])) ? $session['reservedBoxData']['tshirt_size'] : '';
+			   $short_size = (isset($session['reservedBoxData']['short_size'])) ? $session['reservedBoxData']['short_size'] : '';
+			   $sock_size = (isset($session['reservedBoxData']['sock_size'])) ? $session['reservedBoxData']['sock_size'] : '';
+			   //update session value
+				$session['reservedBoxData'] = [
+					'hotel_id' => $session['reservedBoxData']['hotel_id'],
+					'arrival_date' => $arrival_date,
+					'departure_date' => $departure_date,
+					'gear_type' => $gear_type,
+					'shoe_size' => $shoe_size,
+					'short_size' => $short_size,
+					'sock_size' => $sock_size,
+					'boxer_brief_size' => $boxer_brief_size,
+					'tshirt_size' => $tshirt_size,
+			   ];
+		   }else {
+			   // destroys all data registered to a session.
+			   $session->destroy();
+		   }
+        } else {
+           $response['status'] = 'fail';
+        }
+        return \yii\helpers\Json::encode($response);
+    }
+	
+	/**
+     * Choose Geartype.
+     *
+     */
+    public function actionChooseGeartype()
+    {
+		$response   = ['status'=>'fail','data'=>[]];
+		$session 	= Yii::$app->session;
+		$gear_type = Yii::$app->request->post('gear_type');		
+        if(isset($gear_type)) {
+           $response['status'] = 'success';
+		   if($session->has('reservedBoxData')) {
+			   
+			   $shoe_size = (isset($session['reservedBoxData']['shoe_size'])) ? $session['reservedBoxData']['shoe_size'] : '';
+			   $short_size = (isset($session['reservedBoxData']['short_size'])) ? $session['reservedBoxData']['short_size'] : '';
+			   $boxer_brief_size = (isset($session['reservedBoxData']['boxer_brief_size'])) ? $session['reservedBoxData']['boxer_brief_size'] : '';
+			   $tshirt_size = (isset($session['reservedBoxData']['tshirt_size'])) ? $session['reservedBoxData']['tshirt_size'] : '';
+			   $short_size = (isset($session['reservedBoxData']['short_size'])) ? $session['reservedBoxData']['short_size'] : '';
+			   $sock_size = (isset($session['reservedBoxData']['sock_size'])) ? $session['reservedBoxData']['sock_size'] : '';
+			   //update session value
+				$session['reservedBoxData'] = [
+					'hotel_id' => $session['reservedBoxData']['hotel_id'],
+					'arrival_date' => $session['reservedBoxData']['arrival_date'],
+					'departure_date' => $session['reservedBoxData']['departure_date'],
+					'gear_type' => $gear_type,
+					'shoe_size' => $shoe_size,
+					'short_size' => $short_size,
+					'sock_size' => $sock_size,
+					'boxer_brief_size' => $boxer_brief_size,
+					'tshirt_size' => $tshirt_size,
+					
+			   ];
+			   
+		   }else {
+			   // destroys all data registered to a session.
+			   $session->destroy();
+		   }
+        } else {
+           $response['status'] = 'fail';
+        }
+        return \yii\helpers\Json::encode($response);
+    }
+	
+	/**
+     * Choose Size.
+     *
+     */
+    public function actionChooseSize()
+    {
+		$response   = ['status'=>'fail','data'=>['available_stats'=>'all']];
+		$session 	= Yii::$app->session;
+		$shoe_size  = Yii::$app->request->post('shoe_size');		
+		$short_size = Yii::$app->request->post('short_size');		
+		$sock_size  = Yii::$app->request->post('sock_size');		
+		$boxer_brief_size  = Yii::$app->request->post('boxer_brief_size');		
+		$tshirt_size  = Yii::$app->request->post('tshirt_size');		
+        if(isset($shoe_size) && isset($short_size) && isset($sock_size) && isset($boxer_brief_size) && isset($tshirt_size) ) {
+           $response['status'] = 'success';
+		   if($session->has('reservedBoxData')) {
+			   //update session value
+				$session['reservedBoxData'] = [
+					'hotel_id' => $session['reservedBoxData']['hotel_id'],
+					'arrival_date' => $session['reservedBoxData']['arrival_date'],
+					'departure_date' => $session['reservedBoxData']['departure_date'],
+					'gear_type' => $session['reservedBoxData']['gear_type'],
+					'shoe_size' => $shoe_size,
+					'short_size' => $short_size,
+					'sock_size' => $sock_size,
+					'boxer_brief_size' => $boxer_brief_size,
+					'tshirt_size' => $tshirt_size,
+			   ];
+			   
+			   
+			   
+			   $response['data']['reservation_fee'] = number_format((float)35, 2, '.', ''); 			   
+			   $date1 = $session['reservedBoxData']['arrival_date'];
+			   $date2 = $session['reservedBoxData']['departure_date'];
+			   /*$diff = abs(strtotime($date2) - strtotime($date1));
+			   $years = floor($diff / (365*60*60*24));
+			   $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+			   $days = floor(($diff - $years * 365*60*60*24 - $months*30*60*60*24)/ (60*60*24));*/
+			   
+			    $date1_1 = new \DateTime($date1);
+				$date2_2 = new \DateTime($date2);
+
+				// this calculates the diff between two dates, which is the number of nights
+				//echo "<pre>";print_r($date2_2->diff($date1_1));echo "</pre>";
+				
+				$days= $date2_2->diff($date1_1)->format("%a"); 
+			   
+			   
+			   $response['data']['daily_rental_fee'] = ($days>0) ? ($days*5) : 5; 
+			   $response['data']['daily_rental_fee'] = number_format((float)$response['data']['daily_rental_fee'], 2, '.', ''); 
+			   $response['data']['subtotal'] = ($response['data']['daily_rental_fee']+$response['data']['reservation_fee']); 			
+			   $response['data']['subtotal'] = number_format((float)$response['data']['subtotal'], 2, '.', ''); 			
+			   $response['data']['shoe_size'] = $shoe_size; 			
+			   $response['data']['short_size'] = $short_size; 			
+			   $response['data']['sock_size'] = $sock_size; 			
+			   $response['data']['boxer_brief_size'] = $boxer_brief_size; 			
+			   $response['data']['tshirt_size'] = $tshirt_size; 			
+			   $response['data']['booking_date'] = date('M. d',strtotime($date1)).'-'.date('M. d',strtotime($date2)).' '.date('Y',strtotime($date2)); 			
+			   $response['data']['calculated_days_nights'] = $days .' Day(s) + '.$days.' Night(s)'; 			
+			   
+			   
+			   
+		   }else {
+			   // destroys all data registered to a session.
+			   $session->destroy();
+		   }
+        } else {
+           $response['status'] = 'fail';
+        }
+        return \yii\helpers\Json::encode($response);
+    }
+	
+	
+	public function actionConfirmation()
+    {		
+		if(Yii::$app->request->post()) {
+			$posted_array = Yii::$app->request->post();
+			if(isset($posted_array['stripetoken']) && $posted_array['stripetoken']!=null && $posted_array['stripetoken']!='' ) {
+				
+				\Stripe\Stripe::setApiKey(Yii::$app->params['stripe_secret_apikey']);				
+				$check_customer = \Stripe\Customer::all(["limit" => 1,"email"=>$posted_array['stripeemail']]);
+				
+				$customer_id = "";				
+				if(isset($check_customer) && count($check_customer->data)>0) {
+					//Customer already exists
+					$customer_id = $check_customer->data[0]->id;
+				}else {
+					//Customer does not exists
+					/*Creating customer*/
+					$customer = \Stripe\Customer::create([
+					  "description" => "Customer for FlightBox",
+					  "source" => $posted_array['stripetoken'], // obtained with Stripe.js
+					  "email"  => $posted_array['stripeemail'] 
+					]);
+					if(isset($customer) && count($customer)>0) {
+						$customer_id = $customer->id;
+					}
+				}
+				
+				
+				if($customer_id!="") {
+					$charge = \Stripe\Charge::create([
+						  'customer' => $customer_id,
+						  'amount'   => $posted_array['payment_amount'],
+						  'currency' => 'usd',
+					]);
+					
+					if(isset($charge) && count($charge)>0) {
+						$model = [];
+						$session = Yii::$app->session;
+						$reservedBoxData = $session->get('reservedBoxData');						
+						$transaction_id  	 = 	$charge->id;
+						$transaction_status  = 	($charge->captured==1) ? 'success' : 'failed';
+						
+						//saving data to firebse firestore database.
+						$firestoreClient = new \MrShan0\PHPFirestore\FireStoreApiClient(Yii::$app->params['firestore_app_id'], Yii::$app->params['firestore_apikey'], [
+							'database' => '(default)',
+						]);
+		
+						$document = new \MrShan0\PHPFirestore\FireStoreDocument;
+						$document->setString('email', $posted_array['stripeemail']);
+						$document->setString('hotel_id', $reservedBoxData['hotel_id']);
+						$document->setString('stripe_customer_id', $customer_id);
+						$document->setTimestamp('arrival_date', new \MrShan0\PHPFirestore\Fields\FireStoreTimestamp(new \DateTime(date('Y-m-d H:m:s',strtotime($reservedBoxData['arrival_date'])))));
+						$document->setTimestamp('departure_date', new \MrShan0\PHPFirestore\Fields\FireStoreTimestamp(new \DateTime(date('Y-m-d H:m:s',strtotime($reservedBoxData['departure_date'])))));
+						$document->setString('gear_type', $reservedBoxData['gear_type']);
+						$document->setString('shoe_size', $reservedBoxData['shoe_size']);
+						$document->setString('short_size', $reservedBoxData['short_size']);
+						$document->setString('sock_size', $reservedBoxData['sock_size']);
+						$document->setString('boxer_brief_size', $reservedBoxData['boxer_brief_size']);
+						$document->setString('tshirt_size', $reservedBoxData['tshirt_size']);
+						$document->setString('booking_status', $reservedBoxData['gear_type']);
+						$document->setString('payment_status', $transaction_status);
+						$document->setString('transaction_id', $transaction_id);
+						$document->setString('payment_amount', $reservedBoxData['gear_type']);
+						$document->setTimestamp('created', new \MrShan0\PHPFirestore\Fields\FireStoreTimestamp(new \DateTime(date('Y-m-d H:m:s'))));
+						$document->setTimestamp('updated', new \MrShan0\PHPFirestore\Fields\FireStoreTimestamp(new \DateTime(date('Y-m-d H:m:s'))));
+						
+						$order = $firestoreClient->addDocument('orders', $document);
+						$order_array = json_decode($order);
+						//echo "<pre>";print_r($order_array);echo "</pre>";
+						if(count($order_array)>0 && isset($order_array->name)) {
+							//order placed successfully
+							$order_name_array  = explode('/',$order_array->name);
+							$order_id          = $order_name_array[(count($order_name_array)-1)];							
+							//send confirmation email
+							
+							$order_data['reservation_fee'] = number_format((float)35, 2, '.', ''); 			   
+							$date1 = $reservedBoxData['arrival_date'];
+							$date2 = $reservedBoxData['departure_date'];
+							/*$diff = abs(strtotime($date2) - strtotime($date1));
+							$years = floor($diff / (365*60*60*24));
+							$months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+							$days = floor(($diff - $years * 365*60*60*24 - $months*30*60*60*24)/ (60*60*24));*/
+			   
+							$date1_1 = new \DateTime($date1);
+							$date2_2 = new \DateTime($date2);
+
+							// this calculates the diff between two dates, which is the number of nights
+							$days= $date2_2->diff($date1_1)->format("%a"); 
+							$order_data['daily_rental_fee'] = ($days>0) ? ($days*5) : 5; 
+							$order_data['daily_rental_fee'] = number_format((float)$order_data['daily_rental_fee'], 2, '.', ''); 
+							$order_data['subtotal'] = ($order_data['daily_rental_fee']+$order_data['reservation_fee']); 			
+							$order_data['subtotal'] = number_format((float)$order_data['subtotal'], 2, '.', '');
+							$order_data['booking_date'] = date('M. d',strtotime($date1)).'-'.date('M. d',strtotime($date2)).' '.date('Y',strtotime($date2)); 			
+							$order_data['calculated_days_nights'] = $days .' Day(s) + '.$days.' Night(s)'; 			
+							$order_data['firstname'] = $posted_array['firstname'];
+							$order_data['lastname'] = $posted_array['lastname'];
+							Yii::$app
+							->mailer
+							->compose(
+								['html' => 'bookingConfirmed-html', 'text' => 'bookingConfirmed-text'],
+								['boxData' => $reservedBoxData, 'orderData'=> $order_data]
+							)
+							->setFrom([Yii::$app->params['supportEmail'] => 'FlightBox'])
+							->setTo($posted_array['stripeemail'])
+							->setSubject('Reservation Confirmed FlightBox.')
+							->send();
+							$cust_email=$posted_array['stripeemail'];
+							Yii::$app
+							->mailer
+							->compose(
+								['html' => 'bookingProcessing-html', 'text' => 'bookingProcessing-text'],
+								['boxData' => $reservedBoxData, 'orderData'=> $order_data,'cust_email'=>$cust_email]
+							)
+							->setFrom([Yii::$app->params['supportEmail'] => 'FlightBox'])
+							->setTo( Yii::$app->params['processingEmail'])
+							->setSubject('Reservation Confirmed FlightBox.')
+							->send();
+							
+							
+							
+							//die(" ORDER NOT saved to firebase ORDER PLACED");
+						}else {
+							//Error while placing order you ask admin to refund your payments
+							//by using this transection id
+							//die(" ORDER NOT saved to firebase");
+						}
+						// destroys all data registered to a session.
+						$session->destroy();
+						return $this->render('confirmation', [
+							'model' => $model,
+							'session_data' => $reservedBoxData
+						]);
+					}else {
+						return $this->redirect(['site/reserve-box']);
+					}
+				}else {
+					return $this->redirect(['site/reserve-box']);
+				}
+			}else {
+				return $this->redirect(['site/reserve-box']);
+			}			
+		}else {
+			return $this->redirect(['site/reserve-box']);
+		}
+    }
+	
+	public function sendemailtoprocessing()
+	{
+		
+		
+	}
+	
+}

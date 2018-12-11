@@ -1,0 +1,126 @@
+<?php
+
+/* @var $this yii\web\View */
+/* @var $form yii\bootstrap\ActiveForm */
+/* @var $model \frontend\models\ResetPasswordForm */
+
+use yii\helpers\Html;
+use yii\bootstrap\ActiveForm;
+
+$this->title = 'Confirmation';
+//$this->params['breadcrumbs'][] = $this->title;
+?>
+<!--div class="site-reset-password">
+    <h1><?php /*Html::encode($this->title)*/ ?></h1>
+
+    <p>Please choose your new password:</p>
+
+    <div class="row">
+        <div class="col-lg-5">
+            <?php /*$form = ActiveForm::begin(['id' => 'reset-password-form']); ?>
+
+                <?= $form->field($model, 'password')->passwordInput(['autofocus' => true]) ?>
+
+                <div class="form-group">
+                    <?= Html::submitButton('Save', ['class' => 'btn btn-primary']) ?>
+                </div>
+
+            <?php ActiveForm::end();*/ ?>
+        </div>
+    </div>
+</div-->
+
+<div class="container">
+
+		<div class="row">
+
+			<div class="content-shoe">
+
+				<div class="boxes">
+
+					<h4>Your Flight Box Has Been Reserved</h4>
+
+				</div>
+
+				<div class="col-sm-7 col-xs-12 shoe1">
+
+					<div class="shoes">
+
+						<img src="<?php echo Yii::getAlias('@web').'/' ?>images/box.jpg" alt="Flight Box" data-src="<?php echo Yii::getAlias('@web').'/' ?>images/box.jpg">
+
+					</div>
+
+				</div>
+
+				<div class="col-sm-5 col-xs-12">
+
+					<div class="iner-content">
+
+						<div class="boxes">
+
+							<h4>Your Flight Box Has Been Reserved</h4>
+
+							<p>Your Flight Box has been reserved and will be waiting in your room upon your arrival.</p>
+
+							<p>A confirmation has been emailed to you.</p>
+
+						</div>
+
+					</div>
+
+				</div>				
+
+			</div>
+			
+			<div class="brands">
+			<!--	<a href="#">
+					<div class="spotif">
+
+						<div class="tuned"><img src="<?php echo Yii::getAlias('@web').'/' ?>images/ntc.jpg" alt=""></div>
+
+						<div class="clubs">
+
+							<p>Check out the Nike Training Club app for workout routines and inspiration.</p>
+
+						</div>
+
+					</div>
+				</a>
+				
+				<a href="#">
+					<div class="spotif">
+
+						<div class="tuned"><img src="<?php echo Yii::getAlias('@web').'/' ?>images/ntc1.jpg" alt=""></div>
+
+						<div class="clubs">
+
+							<p>Listen to Nike on Spotify while you work out.</p>
+
+						</div>
+
+					</div>
+				</a>	
+				<a href="#">
+					<div class="spotif">
+						<div class="tuned"><img src="<?php echo Yii::getAlias('@web').'/' ?>images/ntc2.jpg" alt=""></div>
+
+						<div class="clubs">
+
+							<p>Tune in to Nike’s “Trained” podcast.</p>
+
+						</div>
+
+					</div>
+				</a>  -->	
+
+				<div class="refnd">
+
+					<p>Please contact support@flightbox.us should you need to change or cancel your reservation. Cancellations within 24 hours of your scheduled arrival time will be charged the reservation fee, but will be refunded the total daily rental fee amount.</p>
+
+				</div>
+
+			</div>
+
+		</div>
+
+	</div>
